@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/tom/CLionProjects/knapsack/main.cpp
+iostream
+-
+fstream
+-
+vector
+-
+algorithm
+-
+cstring
+-
+
