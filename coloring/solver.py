@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ortools.sat.python import cp_model
+from igraph import *
 
 def toGraph(n,m,E):
     graph = {k:[] for k in range(0,n)}
@@ -13,81 +14,58 @@ def toGraph(n,m,E):
 
 def greedy(n,m,E):
     adj_list = toGraph(n,m,E)
-    colours = [-1]*n
+    colors = [-1]*n
     for v in adj_list:
         color = 0
         j = 0
         while j < len(v[1]):
-            if colours[v[1][j]] == color:
+            if colors[v[1][j]] == color:
                 color += 1
                 j = 0
             else:
                 j += 1
-        colours[v[0]] = color
-    return max(colours)+1, colours
+        colors[v[0]] = color
+    return max(colors)+1, colors
 
 def ColouringCPSat(n,m,E):
     upper_bound, greedy_solution = greedy(n,m,E)
 
     model = cp_model.CpModel()
-    colours = [model.NewIntVar(0, upper_bound-1, 'c%i' %i) for i in range(n)]
+    colors = [model.NewIntVar(0, upper_bound-1, 'c%i' %i) for i in range(n)]
+
     for e in E:
-        model.Add(colours[e[0]] != colours[e[1]])   # c_i != c_j para todo (i,j) en E
+        model.Add(colors[e[0]] != colors[e[1]])   # c_i != c_j para todo (i,j) en E
     
-    color_count = model.NewIntVar(0, upper_bound-1, 'color_count') # funcion objetivo minimax
-    model.AddMaxEquality(color_count, colours)
-    model.Minimize(color_count)
-
-    model.AddDecisionStrategy(colours, cp_model.CHOOSE_FIRST, cp_model.SELECT_MIN_VALUE)
-
-    solver = cp_model.CpSolver()
-    solver.parameters.search_branching = cp_model.FIXED_SEARCH
-    solver.parameters.max_time_in_seconds = 600.0
-    status = solver.Solve(model)
-
-    if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
-        res = []
-        for color in colours:
-            res.append(solver.Value(color))
-        
-        return solver.Value(color_count)+1, res
-    else:
-        return upper_bound, greedy_solution
-
-def IntProgramming(n,m,E):
-    model = cp_model.CpModel()
-    w = [model.NewIntVar(0,1,'w%i'%i) for i in range(n)]
-    x = [[model.NewIntVar(0,1,'x%i%i'%(i,j)) for j in range(n)] for i in range(n)]
+    model.Add(colors[0] == 0)
+    max_colors = [model.NewIntVar(0, upper_bound-1, 'c%i' %i) for i in range(n)]
+    for i in range(1,n+1):
+        model.AddMaxEquality(max_colors[i-1], colors[0:i])
+        if(i < n): model.Add(colors[i] <= max_colors[i-1] + 1)
     
-    for i in range(n):
-        model.Add(sum(x[i]) == 1)
+    max_color = max_colors[n-1]
+    model.Minimize(max_color)
 
-    for j in range(n):
-        for e in E:
-            model.Add(x[e[0]][j] + x[e[1]][j] <= w[j])
-        
-        x_j = []
-        for i in range(n):
-            x_j.append(x[i][j])
-        model.Add(w[j] <= sum(x_j))
+    '''g = Graph(n=n, edges=E)
+    cliques = g.cliques(int(n/4), int(n/2))
 
-        if (j < n-1):
-            model.Add(w[j] >= w[j+1])
-
-    model.Minimize(sum(w))
+    for clique in cliques:
+        print(clique)
+        colors_in_clique = [colors[i] for i in clique]
+        model.AddAllDifferent(colors_in_clique)'''
 
     solver = cp_model.CpSolver()
     solver.parameters.max_time_in_seconds = 60.0
     status = solver.Solve(model)
-    
-    if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
-        res = [0]*n
-        for i in range(0,n):
-            for j in range(0,n):
-                if (solver.Value(x[i][j]) == 1):
-                    res[i] = j
 
-    return int(solver.ObjectiveValue()), res
+    if status == cp_model.FEASIBLE or status == cp_model.OPTIMAL:
+        res = []
+        for color in colors:
+            res.append(solver.Value(color))
+        
+        return solver.Value(max_color)+1, res
+    else:
+        return upper_bound, greedy_solution
+
 
 def solve_it(input_data):
     # Modify this code to run your optimization algorithm
@@ -105,10 +83,8 @@ def solve_it(input_data):
         parts = line.split()
         edges.append((int(parts[0]), int(parts[1])))
 
-    #count,solution = greedy(node_count, edge_count, edges)
-    #count,solution = ColouringCPSat(node_count, edge_count, edges)
-    count,solution = IntProgramming(node_count, edge_count, edges)
-
+    count,solution = ColouringCPSat(node_count, edge_count, edges)
+    
     # prepare the solution in the specified output format
     output_data = str(count) + ' ' + str(0) + '\n'
     output_data += ' '.join(map(str, solution))

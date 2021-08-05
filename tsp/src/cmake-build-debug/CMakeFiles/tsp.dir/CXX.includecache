@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/tom/Escritorio/discrete-optimization/tsp/src/Graph/Graph.h
+vector
+-
+set
+-
+../UnionFind/UnionFind.h
+/home/tom/Escritorio/discrete-optimization/tsp/src/UnionFind/UnionFind.h
+
+/home/tom/Escritorio/discrete-optimization/tsp/src/UnionFind/UnionFind.h
+vector
+-
+
+/home/tom/Escritorio/discrete-optimization/tsp/src/main.cpp
+iostream
+-
+fstream
+-
+cstring
+-
+Graph/Graph.h
+/home/tom/Escritorio/discrete-optimization/tsp/src/Graph/Graph.h
+
