@@ -1,66 +1,78 @@
 #include <iostream>
 #include <fstream>
-#include <cstring>
-#include "Graph/Graph.h"
+#include <cmath>
+#include <vector>
+using namespace std;
 
-Graph leer(string file, bool verbose){
-    int n, m;
-    ifstream f(file.c_str());
-    f >> n >> m;
+const double INF = 1e09;
+const int NODO_INICIAL = 0;
 
-    Graph G(n, verbose);
+struct Punto{
+    double x,y;
+};
 
-    int i, j; float c;
-    for (int k = 0; k < m; ++k) {
-        f >> i >> j >> c;
-        G.addEdge(i,j,c);
-    }
+struct Vecino{
+    int index;
+    double dist;
+    Vecino(int i, double d): index(i), dist(d) {};
+};
 
-    return G;
+double d(Punto p1, Punto p2){
+    return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
 
-int main(int argc, char *argv[]) {
-    string metodo = "NN";
-    int K=0,cant_top=0,castigo=0,porcentaje=0,cant_iter=0;
-    bool verbose = false, tabu = false, tabuSol = false, showCurrentOptimal = false;
-    string file = "";
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-m") == 0) metodo = argv[i+1];
-        if (strcmp(argv[i], "-v") == 0) verbose = true;
-        if (strcmp(argv[i], "-o") == 0) showCurrentOptimal = true;
-        if (strcmp(argv[i], "-f") == 0) file = argv[i+1];
-        if (strcmp(argv[i], "-t") == 0){
-            tabu = true;
-            K = stoi(argv[i+1]);
-            castigo = stoi(argv[i+2]);
-            cant_top = stoi(argv[i+3]);
-            porcentaje = stoi(argv[i+4]);
-        }
-        if (strcmp(argv[i], "-ts") == 0){
-            tabuSol = true;
-            cant_top = stoi(argv[i+1]);
-            porcentaje = stoi(argv[i+2]);
-            cant_iter = stoi(argv[i+3]);
+Vecino computar_vecindario(int i, vector<Punto> &v, vector<bool> &visitados, vector<double> &vecindario){
+    Vecino mejor(i, INF);
+    for (int j = 0; j < vecindario.size(); ++j) {
+        vecindario[j] = visitados[j] ? INF : d(v[i], v[j]);
+        if (vecindario[j] < mejor.dist){
+            mejor.dist = vecindario[j];
+            mejor.index = j;
         }
     }
+    return mejor;
+}
 
-    Graph G = leer(file, verbose);
+int main(int argc, char* argv[]) {
+    // Levanto el archivo por parametro
+    if (argc != 2) return 1;
+    ifstream f(argv[1]);
+    if (!f.is_open()) return 1;
 
-    pair<cycle, weight> circuito;
-    if (strcmp(metodo.c_str(), "NN") == 0) circuito = G.nearestNeighbor();
-    if (strcmp(metodo.c_str(), "AC") == 0) circuito = G.shortestEdge();
-    if (strcmp(metodo.c_str(), "heurAG") == 0) circuito = G.heurAG();
-    if (strcmp(metodo.c_str(), "random") == 0) circuito = G.randomCycle();
+    // Leo el archivo
+    unsigned long n = 0;
+    f >> n;
+    vector<Punto> v(n);
+    for (int i = 0; i < n; ++i) {
+        f >> v[i].x >> v[i].y;
+    }
 
-    if (tabu)
-        circuito.second = G.tabu_search(circuito.first, circuito.second, K, porcentaje, castigo, cant_top, showCurrentOptimal);
-    else if (tabuSol)
-        circuito.second = G.tabu_search_basado_en_ciclos(circuito.first, circuito.second, porcentaje, cant_top, cant_iter, showCurrentOptimal);
+    // Búsqueda local: heurística mejor vecino
+    vector<bool> visitados(n,false);
+    vector<double> vecindario(n, INF);
+    vector<int> ciclo_hamiltoniano;
+    int cant_visitados = 0, actual = NODO_INICIAL;
+    double dist_total = 0;
+    while (cant_visitados < n){
+        visitados[actual]= true;
+        ciclo_hamiltoniano.push_back(actual);
+        if (cant_visitados < n-1){
+            Vecino mejor_vecino = computar_vecindario(actual, v, visitados, vecindario);
+            actual = mejor_vecino.index;
+            dist_total += mejor_vecino.dist;
+        }
+        else {
+            dist_total += d(v[ciclo_hamiltoniano[n-1]], v[NODO_INICIAL]);
+        }
 
-    cout << circuito.second << " 0" << endl;
-    Graph::printCycle(circuito.first);
+        cant_visitados++;
+    }
+
+    cout << dist_total << " 0" << endl;
+    for (int i = 0; i < n; ++i) {
+        cout << ciclo_hamiltoniano[i] << " ";
+    }
+    cout << endl;
 
     return 0;
 }
-
-

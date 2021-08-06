@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/tomasfedi/Desktop/discrete-optimization/tsp/src/main.cpp" "/Users/tomasfedi/Desktop/discrete-optimization/tsp/src/cmake-build-debug/CMakeFiles/tsp.dir/main.cpp.o"
+  "/Users/tomasfedi/Desktop/discrete-optimization/tsp/src/main.cpp" "/Users/tomasfedi/Desktop/discrete-optimization/tsp/src/cmake-build-debug/CMakeFiles/src.dir/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "AppleClang")
 

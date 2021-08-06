@@ -1,1 +1,1 @@
-/usr/bin/c++ -g CMakeFiles/tsp.dir/main.cpp.o CMakeFiles/tsp.dir/Graph/Graph.cpp.o CMakeFiles/tsp.dir/UnionFind/UnionFind.cpp.o CMakeFiles/tsp.dir/Utils/utils.cpp.o -o tsp 
+/Library/Developer/CommandLineTools/usr/bin/c++  -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/tsp.dir/main.cpp.o  -o tsp 

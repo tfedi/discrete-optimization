@@ -29,13 +29,10 @@ def solve_it(input_data):
     tmp_file_name = 'tmp.data'
     tmp_file_path = './src/cmake-build-debug/' + tmp_file_name
     tmp_file = open(tmp_file_path, 'w')
-    tmp_file.write("{} {}\n".format(nodeCount, int(((nodeCount-1)*nodeCount)/2)))
-    for i in range (0, nodeCount-1):
-        for j in range (i+1, nodeCount):
-            tmp_file.write("{} {} {}\n".format(i,j,length(points[i], points[j])))
+    tmp_file.write(input_data)
     tmp_file.close()
 
-    process = Popen(['./src/cmake-build-debug/tsp', '-f', tmp_file_path, '-m', 'NN', '-t', '20', '0', '10', '50'], stdout=PIPE, universal_newlines=True)
+    process = Popen(['./src/cmake-build-debug/tsp', tmp_file_path], stdout=PIPE, universal_newlines=True)
     (stdout, stderr) = process.communicate()
 
     # removes the temporay file

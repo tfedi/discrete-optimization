@@ -6,25 +6,13 @@
 
 #IncludeRegexTransform: 
 
-/home/tom/Escritorio/discrete-optimization/tsp/src/Graph/Graph.h
-vector
--
-set
--
-../UnionFind/UnionFind.h
-/home/tom/Escritorio/discrete-optimization/tsp/src/UnionFind/UnionFind.h
-
-/home/tom/Escritorio/discrete-optimization/tsp/src/UnionFind/UnionFind.h
-vector
--
-
-/home/tom/Escritorio/discrete-optimization/tsp/src/main.cpp
+/Users/tomasfedi/Desktop/discrete-optimization/tsp/src/main.cpp
 iostream
 -
 fstream
 -
-cstring
+cmath
 -
-Graph/Graph.h
-/home/tom/Escritorio/discrete-optimization/tsp/src/Graph/Graph.h
+vector
+-
 
