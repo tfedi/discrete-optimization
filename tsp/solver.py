@@ -7,23 +7,7 @@ from collections import namedtuple
 import os
 from subprocess import Popen, PIPE
 
-Point = namedtuple("Point", ['x', 'y'])
-
-def length(point1, point2):
-    return math.sqrt((point1.x - point2.x)**2 + (point1.y - point2.y)**2)
-
 def solve_it(input_data):
-    # parse the input
-    lines = input_data.split('\n')
-
-    nodeCount = int(lines[0])
-
-    points = []
-    for i in range(1, nodeCount+1):
-        line = lines[i]
-        parts = line.split()
-        points.append(Point(float(parts[0]), float(parts[1])))
-
      # Writes the inputData to a temporay file
 
     tmp_file_name = 'tmp.data'

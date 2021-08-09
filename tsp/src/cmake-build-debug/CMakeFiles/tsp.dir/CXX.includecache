@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/Users/tomasfedi/Desktop/discrete-optimization/tsp/src/main.cpp
+/home/tom/Escritorio/discrete-optimization/tsp/src/main.cpp
 iostream
 -
 fstream
@@ -14,5 +14,13 @@ fstream
 cmath
 -
 vector
+-
+map
+-
+list
+-
+algorithm
+-
+thread
 -
 
