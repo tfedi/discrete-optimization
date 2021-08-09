@@ -10,7 +10,7 @@ using namespace std;
 
 const double INF = 1e09;
 const int NODO_INICIAL = 0;
-const int CANT_ITER_TABU = 65;
+const int CANT_ITER_TABU = 40;
 const int MAX_ITER_TABU = 10000;
 const int CANT_VECINOS_POR_HILO = 500;
 struct Punto{
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
 
     // Búsqueda tabú
     int mejor_i, mejor_j, t = 0;
-    double mejor_dist=dist_total, dist_swap, mejor_dist_vecina;
+    double mejor_dist=dist_total, mejor_dist_vecina;
     vector<int> mejor_ciclo = ciclo_hamiltoniano;
     map<pair<int,int>, int> tabu_list;
 
@@ -174,14 +174,21 @@ int main(int argc, char* argv[]) {
         mejor_j = 0;
         mejor_dist_vecina = INF;
         for(int i = 0; i < dist_por_swap.size(); i++){
-            if (dist_por_swap[i] < mejor_dist_vecina && (tabu_list.count(make_pair(vecindad[i].first, vecindad[i].second)) == 0 || dist_swap < mejor_dist)){
+            if (dist_por_swap[i] < mejor_dist_vecina && (tabu_list.count(make_pair(vecindad[i].first, vecindad[i].second)) == 0 || dist_por_swap[i] < mejor_dist)){
                 mejor_dist_vecina = dist_por_swap[i];
                 mejor_i = vecindad[i].first;
                 mejor_j = vecindad[i].second;
             }
         }
 
-        // Hago el mejor swap disponible
+        // Si no encontré un swap que mejore, hago uno al azar.
+        if (mejor_dist_vecina >= dist_total){
+            srand(time(NULL));
+            int index_vecino_al_azar = rand() % vecindad.size();
+            mejor_i = vecindad[index_vecino_al_azar].first;
+            mejor_j = vecindad[index_vecino_al_azar].second;
+            mejor_dist_vecina = dist_por_swap[index_vecino_al_azar];
+        }
         swap(ciclo_hamiltoniano[mejor_i], ciclo_hamiltoniano[mejor_j]);
         dist_total = mejor_dist_vecina;
 
