@@ -11,10 +11,10 @@ using namespace std;
 
 const double INF = 1e09;
 const int NODO_INICIAL = 0;
-const int CANT_ITER_TABU = 5;
-const int ITER_TABU = 100;
-const int MAX_ITER_TABU = 50;
+const int CANT_ITER_TABU = 10;
+const int MAX_ITER_TABU = 100;
 const int TAM_VECINDARIO_RANDOM = 1000;
+const int ITER_TABU = 50;
 const int CANT_HILOS = 8;
 
 struct Punto{

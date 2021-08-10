@@ -1,1 +1,1 @@
-/Library/Developer/CommandLineTools/usr/bin/c++   -pthread -std=gnu++11 -ggdb3 -g -g -Wl,-search_paths_first -Wl,-headerpad_max_install_names  CMakeFiles/tsp.dir/main.cpp.o  -o tsp 
+/usr/bin/c++  -pthread -std=gnu++11 -ggdb3 -g -g CMakeFiles/tsp.dir/main.cpp.o -o tsp 
