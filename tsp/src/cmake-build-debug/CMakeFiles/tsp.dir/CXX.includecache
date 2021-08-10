@@ -6,7 +6,7 @@
 
 #IncludeRegexTransform: 
 
-/home/tom/Escritorio/discrete-optimization/tsp/src/main.cpp
+/Users/tomasfedi/Desktop/discrete-optimization/tsp/src/main.cpp
 iostream
 -
 fstream
@@ -22,5 +22,7 @@ list
 algorithm
 -
 thread
+-
+random
 -
 

@@ -6,6 +6,7 @@
 #include <list>
 #include <algorithm>
 #include <thread>
+#include <random>
 using namespace std;
 
 const double INF = 1e09;
@@ -13,6 +14,7 @@ const int NODO_INICIAL = 0;
 const int CANT_ITER_TABU = 5;
 const int ITER_TABU = 100;
 const int MAX_ITER_TABU = 50;
+const int TAM_VECINDARIO_RANDOM = 1000;
 const int CANT_HILOS = 8;
 
 struct Punto{
@@ -149,14 +151,16 @@ int main(int argc, char* argv[]) {
     }
 
     // Búsqueda tabú
-    int t = 0;
-    double mejor_dist=dist_total, mejor_dist_vecina;
+    double mejor_dist=dist_total;
     vector<int> mejor_ciclo = ciclo_hamiltoniano;
     map<tuple<int,int>, int> tabu_list;
 
     vector<thread> threads;
     const int CANT_VECINOS_POR_HILO = (int)ciclo_hamiltoniano.size()/CANT_HILOS;
-    while (t < MAX_ITER_TABU){
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    for(int t = 0; t < MAX_ITER_TABU; t++){
         // Intensificación
         for(int i = 0; i < ciclo_hamiltoniano.size(); i+=CANT_VECINOS_POR_HILO){
             std::thread th(calcular_distancia_swaps, Parametros_Thread(i, min((int)ciclo_hamiltoniano.size(), i+CANT_VECINOS_POR_HILO), ciclo_hamiltoniano, v));
@@ -178,10 +182,36 @@ int main(int argc, char* argv[]) {
         }
 
         // Diversificación
-        two_opt(0, (int)ciclo_hamiltoniano.size(), ciclo_hamiltoniano, v);
-        /*restar_iter_tabu(tabu_list);
-        tabu_list[mejor_swap] = CANT_ITER_TABU;*/
-        t++;
+        for (int k = 0; k < ITER_TABU; ++k) {
+            // Vecindario random
+            vector<tuple<int,int>> vecindario_random(TAM_VECINDARIO_RANDOM);
+            for (int i = 0; i < TAM_VECINDARIO_RANDOM; ++i) {
+                std::uniform_int_distribution<> distrib_i(0, n-4);
+                int nuevo_i = distrib_i(gen);
+                std::uniform_int_distribution<> distrib_j(nuevo_i+2, n-2);
+                int nuevo_j = distrib_j(gen);
+                vecindario_random[i] = make_tuple(nuevo_i, nuevo_j);
+            }
+            double mejor_dist_local = calcular_swap(ciclo_hamiltoniano, vecindario_random[0], v, dist_total);
+            tuple<int,int> mejor_swap = vecindario_random[0];
+            for (auto &vecino: vecindario_random) {
+                double nueva_dist = calcular_swap(ciclo_hamiltoniano, vecino, v, dist_total);
+                if (nueva_dist < mejor_dist_local && (tabu_list.count(vecino) == 0 || nueva_dist < mejor_dist)){
+                    mejor_dist_local = nueva_dist;
+                    mejor_swap = vecino;
+                }
+            }
+            ciclo_hamiltoniano = swap(ciclo_hamiltoniano, mejor_swap);
+            dist_total = mejor_dist_local;
+
+            if (dist_total < mejor_dist){
+                mejor_dist = dist_total;
+                mejor_ciclo = ciclo_hamiltoniano;
+            }
+
+            restar_iter_tabu(tabu_list);
+            tabu_list[mejor_swap] = CANT_ITER_TABU;
+        }
     }
 
     cout << mejor_dist << " 0" << endl;
