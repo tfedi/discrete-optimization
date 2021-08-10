@@ -10,9 +10,11 @@ using namespace std;
 
 const double INF = 1e09;
 const int NODO_INICIAL = 0;
-const int CANT_ITER_TABU = 40;
-const int MAX_ITER_TABU = 10000;
-const int CANT_VECINOS_POR_HILO = 500;
+const int CANT_ITER_TABU = 5;
+const int ITER_TABU = 100;
+const int MAX_ITER_TABU = 50;
+const int CANT_HILOS = 8;
+
 struct Punto{
     double x,y;
 };
@@ -24,22 +26,29 @@ struct Vecino{
 };
 
 struct Parametros_Thread{
-    vector<double> &distancias;
-    vector<pair<int,int>> &vecindad;
     int from, to;
     vector<int> &ciclo;
     vector<Punto> &v;
-    double dist;
-    Parametros_Thread(vector<double> &distancias,
-                      vector<pair<int,int>> &vecindad,
-                      int from,
+    Parametros_Thread(int from,
                       int to,
                       vector<int> &ciclo,
-                      vector<Punto> &v,
-                      double dist) : distancias(distancias), vecindad(vecindad), from(from), to(to), ciclo(ciclo), v(v), dist(dist) {};
+                      vector<Punto> &v) : from(from), to(to), ciclo(ciclo), v(v) {};
 };
+
 double d(Punto p1, Punto p2){
     return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+}
+
+double computar_distancia_recorrido(int from, int to, vector<int> &ciclo, vector<Punto> &v){
+    double res = 0;
+    for (int i = from; i < to-1; ++i) {
+        res += d(v[ciclo[i]], v[ciclo[i+1]]);
+    }
+    return res;
+}
+
+double computar_distancia_ciclo(int from, int to, vector<int> &ciclo, vector<Punto> &v){
+    return computar_distancia_recorrido(from, to, ciclo, v) + d(v[ciclo[to-1]], v[ciclo[from]]);
 }
 
 Vecino computar_vecindario(int i, vector<Punto> &v, vector<bool> &visitados, vector<double> &vecindario){
@@ -54,55 +63,55 @@ Vecino computar_vecindario(int i, vector<Punto> &v, vector<bool> &visitados, vec
     return mejor;
 }
 
-
-double calcular_swap(vector<int> &ciclo, int i, int j, vector<Punto> &v, double dist){
-    if (i == j) return dist;
-
-    int prev_i = i == 0 ? ciclo.size()-1 : i-1;
-    int sig_i = i+1;
-    int prev_j = j-1;
-    int sig_j = j == ciclo.size()-1 ? 0 : j+1;
-
-    i = ciclo[i]; j = ciclo[j]; prev_i = ciclo[prev_i], sig_i = ciclo[sig_i], prev_j = ciclo[prev_j], sig_j = ciclo[sig_j];
-    if (prev_i == j && sig_j == i){
-        dist -= d(v[i], v[sig_i]);
-        dist -= d(v[j], v[prev_j]);
-        dist += d(v[j], v[sig_i]);
-        dist += d(v[i], v[prev_j]);
-    }
-    else if (sig_i == j && prev_j == i){
-        dist -= d(v[i], v[prev_i]);
-        dist -= d(v[j], v[sig_j]);
-        dist += d(v[j], v[prev_i]);
-        dist += d(v[i], v[sig_j]);
-    }
-    else{
-        dist -= d(v[i], v[prev_i]);
-        dist -= d(v[i], v[sig_i]);
-        dist -= d(v[j], v[prev_j]);
-        dist -= d(v[j], v[sig_j]);
-        dist += d(v[i], v[prev_j]);
-        dist += d(v[i], v[sig_j]);
-        dist += d(v[j], v[prev_i]);
-        dist += d(v[j], v[sig_i]);
-    }
+double calcular_swap(vector<int> &ciclo, tuple<int,int> s, vector<Punto> &v, double dist){
+    int i = get<0>(s), j = get<1>(s);
+    dist -= d(v[ciclo[i]], v[ciclo[i+1]]);
+    dist -= d(v[ciclo[j]], v[ciclo[j+1]]);
+    dist += d(v[ciclo[i]], v[ciclo[j]]);
+    dist += d(v[ciclo[i+1]], v[ciclo[j+1]]);
     return dist;
 }
 
-void restar_iter_tabu(map<pair<int,int>, int> &tabu_list){
-    list<pair<int,int>> a_borrar;
+vector<int> swap(vector<int> &ciclo, tuple<int,int> s){
+    vector<int> nuevo;
+    int i = get<0>(s), j = get<1>(s);
+    for (int l = 0; l <= i; ++l) {nuevo.push_back(ciclo[l]);}
+    for (int l = j; l >= i+1; --l) {nuevo.push_back(ciclo[l]);}
+    for (int l = j+1; l < ciclo.size(); ++l) {nuevo.push_back(ciclo[l]);}
+    return nuevo;
+}
+
+void two_opt(int from, int to, vector<int> &ciclo, vector<Punto> &v){
+    double dist = computar_distancia_recorrido(from, to, ciclo, v);
+    double mejor_dist = calcular_swap(ciclo, make_tuple(from, from+2), v, dist);
+    tuple<int,int> mejor_swap = make_tuple(from, from+2);
+    for (int i = from; i < to-4; ++i) {
+        for (int j = i+2; j < to-2; ++j) {
+            double nueva_dist = calcular_swap(ciclo, make_tuple(i,j),v,dist);
+            if (nueva_dist < mejor_dist){
+                mejor_dist = nueva_dist;
+                mejor_swap = make_tuple(i,j);
+            }
+        }
+    }
+    if (mejor_dist < dist){
+        vector<int> nuevo = swap(ciclo, mejor_swap);
+        for(int i = from; i < to; i++) ciclo[i] = nuevo[i];
+    }
+}
+
+void calcular_distancia_swaps(Parametros_Thread params){
+    two_opt(params.from, params.to, params.ciclo, params.v);
+}
+
+void restar_iter_tabu(map<tuple<int,int>, int> &tabu_list){
+    list<tuple<int,int>> a_borrar;
     for (auto &p: tabu_list) {
         if (p.second-- <= 0) a_borrar.push_back(p.first);
     }
     for (auto p: a_borrar){ tabu_list.erase(p); }
 }
 
-void calcular_distancia_swaps(Parametros_Thread params){
-    for (int i = params.from; i < min((int)params.distancias.size(), params.to); ++i) {
-        params.distancias[i] = calcular_swap(params.ciclo, params.vecindad[i].first, params.vecindad[i].second, params.v, params.dist);
-    }
-    //cout << "Calculadas las distancias desde " << params.from << " hasta " << min((int)params.distancias.size(), params.to) << endl;
-}
 
 int main(int argc, char* argv[]) {
     // Levanto el archivo por parametro
@@ -119,7 +128,6 @@ int main(int argc, char* argv[]) {
     }
 
     // Obtenemos un ciclo inicial
-
     vector<bool> visitados(n,false);
     vector<double> vecindario(n, INF);
     vector<int> ciclo_hamiltoniano;
@@ -141,25 +149,17 @@ int main(int argc, char* argv[]) {
     }
 
     // Búsqueda tabú
-    int mejor_i, mejor_j, t = 0;
+    int t = 0;
     double mejor_dist=dist_total, mejor_dist_vecina;
     vector<int> mejor_ciclo = ciclo_hamiltoniano;
-    map<pair<int,int>, int> tabu_list;
+    map<tuple<int,int>, int> tabu_list;
 
-    vector<pair<int,int>> vecindad;
-    for (int i = 0; i < n-1; ++i) {
-        for (int j = i+1; j < n; ++j) {
-            vecindad.emplace_back(make_pair(i,j));
-        }
-    }
-
-    vector<double> dist_por_swap(vecindad.size());
     vector<thread> threads;
-
+    const int CANT_VECINOS_POR_HILO = (int)ciclo_hamiltoniano.size()/CANT_HILOS;
     while (t < MAX_ITER_TABU){
-        // Calculo nuevo vecindario
-        for(int i = 0; i < vecindad.size(); i+=CANT_VECINOS_POR_HILO){
-            std::thread th(calcular_distancia_swaps, Parametros_Thread(dist_por_swap, vecindad, i, i+CANT_VECINOS_POR_HILO, ciclo_hamiltoniano, v, dist_total));
+        // Intensificación
+        for(int i = 0; i < ciclo_hamiltoniano.size(); i+=CANT_VECINOS_POR_HILO){
+            std::thread th(calcular_distancia_swaps, Parametros_Thread(i, min((int)ciclo_hamiltoniano.size(), i+CANT_VECINOS_POR_HILO), ciclo_hamiltoniano, v));
             threads.push_back(move(th));
         }
         for (std::thread & th : threads)
@@ -169,28 +169,7 @@ int main(int argc, char* argv[]) {
                 th.join();
         }
 
-        // Busco el mejor swap disponible
-        mejor_i = 0;
-        mejor_j = 0;
-        mejor_dist_vecina = INF;
-        for(int i = 0; i < dist_por_swap.size(); i++){
-            if (dist_por_swap[i] < mejor_dist_vecina && (tabu_list.count(make_pair(vecindad[i].first, vecindad[i].second)) == 0 || dist_por_swap[i] < mejor_dist)){
-                mejor_dist_vecina = dist_por_swap[i];
-                mejor_i = vecindad[i].first;
-                mejor_j = vecindad[i].second;
-            }
-        }
-
-        // Si no encontré un swap que mejore, hago uno al azar.
-        if (mejor_dist_vecina >= dist_total){
-            srand(time(NULL));
-            int index_vecino_al_azar = rand() % vecindad.size();
-            mejor_i = vecindad[index_vecino_al_azar].first;
-            mejor_j = vecindad[index_vecino_al_azar].second;
-            mejor_dist_vecina = dist_por_swap[index_vecino_al_azar];
-        }
-        swap(ciclo_hamiltoniano[mejor_i], ciclo_hamiltoniano[mejor_j]);
-        dist_total = mejor_dist_vecina;
+        dist_total = computar_distancia_ciclo(0, (int)ciclo_hamiltoniano.size(), ciclo_hamiltoniano, v);
 
         // Si mejora el que teníamos, me lo guardo
         if (dist_total < mejor_dist){
@@ -198,9 +177,10 @@ int main(int argc, char* argv[]) {
             mejor_ciclo = ciclo_hamiltoniano;
         }
 
-        // Actualizo lista tabú
-        restar_iter_tabu(tabu_list);
-        tabu_list[make_pair(mejor_i,mejor_j)] = CANT_ITER_TABU;
+        // Diversificación
+        two_opt(0, (int)ciclo_hamiltoniano.size(), ciclo_hamiltoniano, v);
+        /*restar_iter_tabu(tabu_list);
+        tabu_list[mejor_swap] = CANT_ITER_TABU;*/
         t++;
     }
 
